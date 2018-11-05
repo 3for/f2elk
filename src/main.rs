@@ -41,9 +41,8 @@ fn run2() {
         let (offset_sender, offset_receiver) = sync_channel(10);
         let file_name = Arc::new(file.file_name.clone());
 
-        let sender_handler =
-                thread::Builder::new()
-                    .name("sender".to_string()).spawn({
+        let sender_handler = thread::Builder::new()
+                .name("sender".to_string()).spawn({
             let offset = offset.get().clone();
             let file_name = file_name.clone();
 
@@ -55,9 +54,8 @@ fn run2() {
             }
         }}).unwrap();
 
-        let receiver_handler =
-                thread::Builder::new()
-                    .name("receiver".to_string()).spawn({
+        let receiver_handler = thread::Builder::new()
+                .name("receiver".to_string()).spawn({
             let file_name = file_name.clone();
             move || {
             while let Ok((line, offset)) = line_receiver.recv() {

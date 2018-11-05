@@ -34,7 +34,7 @@ impl Iterator for RecordIter  {
 
         let rec = LogRecord{
             offset,
-            data: line.to_string(),
+            data: line.into(),
         };
         Some(rec)
 

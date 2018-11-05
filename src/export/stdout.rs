@@ -2,9 +2,9 @@ use std::io::{self, Write};
 use super::*;
 
 #[derive(Clone, Copy)]
-pub struct StdoutSender {}
+pub struct StdoutSender;
 
-impl<'a> Exporter for &'a StdoutSender {
+impl<'a> Exporter for StdoutSender {
     fn send(&self, file_name: &str, line: &str, offset :u64) -> Result<(), &'static str>{
         let f = move || -> Result<(), io::Error>{
             let stdout = io::stdout();

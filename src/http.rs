@@ -33,3 +33,16 @@
 //        .send().unwrap();
 //
 //
+//
+// #[derive(Serialize, )]
+// struct LogstashLogRecord {
+//     message: String,
+//     source: String,
+//     fields: LogstashFields,
+//     offset: u64,
+// }
+//#[derive(Serialize, )]
+//struct LogstashFields{
+//   program: String,
+//}
+

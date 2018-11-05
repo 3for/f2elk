@@ -55,7 +55,7 @@ impl <'a>DataBase<'a> {
         (&r.offset, &r.modified)
 
     }
-
+    #[allow(dead_code)]
     pub fn update(&mut self,
                   file_name: &str, offset: u64, modified: u64) {
         let f = self.files.entry(file_name.to_string())

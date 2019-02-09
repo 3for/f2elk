@@ -22,64 +22,66 @@ use file_reader::Lines;
 use export::Exporter;
 
 
-fn run2() {
+fn process_single_file(file:&file::File, config:&config::Config, exporter: &Exporter) {
+
+    let mut offsets_db = db::DataBase::new(&config.db_file);
+    offsets_db.read();
+    let (offset, modified) = offsets_db.get(&file.file_name);
+
+    if modified.get() >= file.modified {
+        return;
+    }
+
+    let (line_sender, line_receiver) = sync_channel(10);
+    let (offset_sender, offset_receiver) = sync_channel(10);
+    let file_name = Arc::new(file.file_name.clone());
+
+    let sender_handler = thread::Builder::new()
+            .name("sender".to_string()).spawn({
+        let offset = offset.get().clone();
+        let file_name = file_name.clone();
+
+        move || {
+        let lines = Lines::new(&file_name);
+        for line in lines.iter(offset){
+             if let Err(_) = line_sender
+                 .send((line.data, line.offset)) {break;};
+        }
+    }}).unwrap();
+
+    let receiver_handler = thread::Builder::new()
+            .name("receiver".to_string()).spawn({
+        let file_name = file_name.clone();
+        move || {
+        while let Ok((line, offset)) = line_receiver.recv() {
+            match exporter.send(&file_name, &line, offset){
+                Ok(_) => {
+                    if let Err(_) = offset_sender.send(offset) {break;}
+                },
+                Err("BrokenPipe") => break,
+                Err(e) => panic!(e),
+            }
+        }
+
+    }}).unwrap();
+    while let Ok(r) = offset_receiver.recv(){
+            offset.set(r);
+    }
+
+    receiver_handler.join().unwrap();
+    sender_handler.join().unwrap();
+}
+fn main_loop(){
     let config = Rc::new(config_reader("config.json"));
     let files = file::get_file_by_pattern(
         &config.path, &config.file_pattern).unwrap();
-    let exporter = export::stdout::StdoutSender{};
-
+    let exporter = Arc::new(export::stdout::StdoutSender{});
     for file in &files{
-        let mut offsets_db = db::DataBase::new(&config.db_file);
-        offsets_db.read();
-        let (offset, modified) = offsets_db.get(&file.file_name);
-
-        if modified.get() >= file.modified {
-            continue;
-        }
-
-        let (line_sender, line_receiver) = sync_channel(10);
-        let (offset_sender, offset_receiver) = sync_channel(10);
-        let file_name = Arc::new(file.file_name.clone());
-
-        let sender_handler = thread::Builder::new()
-                .name("sender".to_string()).spawn({
-            let offset = offset.get().clone();
-            let file_name = file_name.clone();
-
-            move || {
-            let lines = Lines::new(&file_name);
-            for line in lines.iter(offset){
-                 if let Err(_) = line_sender
-                     .send((line.data, line.offset)) {break;};
-            }
-        }}).unwrap();
-
-        let receiver_handler = thread::Builder::new()
-                .name("receiver".to_string()).spawn({
-            let file_name = file_name.clone();
-            move || {
-            while let Ok((line, offset)) = line_receiver.recv() {
-                match exporter.send(&file_name, &line, offset){
-                    Ok(_) => {
-                        if let Err(_) = offset_sender.send(offset) {break;}
-                    },
-                    Err("BrokenPipe") => break,
-                    Err(e) => panic!(e),
-                }
-            }
-
-        }}).unwrap();
-        while let Ok(r) = offset_receiver.recv(){
-                offset.set(r);
-        }
-
-        receiver_handler.join().unwrap();
-        sender_handler.join().unwrap();
+        process_single_file(&file, &config, &exporter as &Exporter);
     }
 }
-
 fn main() -> Result<(), std::io::Error> {
-    run2();
+    main_loop();
     Ok(())
 }
 

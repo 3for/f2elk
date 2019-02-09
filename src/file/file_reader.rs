@@ -29,7 +29,7 @@ impl Iterator for RecordIter  {
         if buf.contains(&b'\0') {
             return None;
         }
-        let line = String::from_utf8(buf).unwrap();
+        let line = String::from_utf8_lossy(&buf);
         let line = line.trim();
 
         let rec = LogRecord{

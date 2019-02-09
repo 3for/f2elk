@@ -2,10 +2,12 @@ use std::io::{self, Write};
 use super::*;
 
 #[derive(Clone, Copy)]
-pub struct StdoutSender;
+pub struct StdoutSender{
+    pub counter: i64,
+}
 
-impl<'a> Exporter for StdoutSender {
-    fn send(&self, file_name: &str, line: &str, offset :u64) -> Result<(), &'static str>{
+impl Exporter for StdoutSender {
+    fn send(&self, file_name: &str, line: &str, offset :u64) -> Result<(), String>{
         let f = move || -> Result<(), io::Error>{
             let stdout = io::stdout();
             let mut w = stdout.lock();
@@ -15,7 +17,7 @@ impl<'a> Exporter for StdoutSender {
         };
         if let Err(e) = f() {
             match e.kind() {
-                io::ErrorKind::BrokenPipe => {return Err("BrokenPipe")},
+                io::ErrorKind::BrokenPipe => {return Err("BrokenPipe".to_string())},
                 _ => panic!(e),
             }
         }

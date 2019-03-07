@@ -4,7 +4,7 @@ use export::Exporter;
 
 
 use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, Ordering};
 
 fn take_n<I, K>(iter: I, n: usize) -> Option<Vec<K>>
     where
@@ -22,19 +22,19 @@ fn take_n<I, K>(iter: I, n: usize) -> Option<Vec<K>>
 
 pub fn lines_sender<T>(
     file_name: &str, line_receiver: Receiver<(String, u64)>,
-    offset_sender: SyncSender<u64>, exporter: T, term: Arc<AtomicUsize>)
+    offset_sender: SyncSender<u64>, exporter: T, term: &Arc<AtomicBool> )
     -> std::thread::JoinHandle<()>
     where T: Exporter + Send + 'static
 
 {
+    let t = term.clone();
    let file_name = file_name.to_owned();
    let receiver_handler  = thread::Builder::new()
             .name("receiver".to_string()).spawn({
         let file_name = file_name.clone();
         move || {
 			while let Some(lines) = take_n(line_receiver.iter(), 200){
-
-                if term.load(Ordering::Relaxed) != 0 {println!("breaking by signal"); break;}
+                if t.load(Ordering::SeqCst) {break;}
 
                 let (_, offset) = lines.last().unwrap().to_owned();
                 match exporter.send(&file_name, lines.to_owned()){

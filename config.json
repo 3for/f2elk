@@ -1,5 +1,5 @@
 {
-    "file_pattern": "20181024\\.log",
-    "path": "/Users/stavinsky/temp",
+    "file_pattern": "20190212\\.log",
+    "path": "/home/stavinsky/temp",
     "db_file": "db.json"
 }

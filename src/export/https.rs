@@ -12,16 +12,16 @@ pub struct HttpsSender{
     client: reqwest::Client,
 }
 impl HttpsSender {
-    pub fn new(url: &str, ssl: Option<SslConfig>)
+    pub fn new(url: &str, ssl: &Option<SslConfig>)
             -> Result<HttpsSender, io::Error> {
         let client = match ssl {
             Some(ssl) => {
                 let mut buf = Vec::new();
-                File::open(ssl.client_pem_file)?
+                File::open(&ssl.client_pem_file)?
                     .read_to_end(&mut buf)?;
                 let identity = reqwest::Identity::from_pem(&buf).unwrap();
                 let mut buf = Vec::new();
-                File::open(ssl.client_ca_chain_file)?
+                File::open(&ssl.client_ca_chain_file)?
                     .read_to_end(&mut buf)?;
                 let ca = reqwest::Certificate::from_pem(&buf).unwrap();
                 let client = reqwest::Client::builder()

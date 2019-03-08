@@ -41,13 +41,16 @@ fn main_loop() -> Result<(), std::io::Error>{
             ::std::process::exit(1);
         }
     };
-    let files = get_files_by_pattern(
-        &config.path, &config.file_pattern)?;
-    let exporter = HttpsSender::new(
-        &config.logstash_connection, config.logstash_ssl
-    )?;
-    for file in &files{
-        process_single_file(&file, &config.db_file, exporter.to_owned(), &term);
+    loop{
+        let files = get_files_by_pattern(
+            &config.path, &config.file_pattern)?;
+        let exporter = HttpsSender::new(
+            &config.logstash_connection, &config.logstash_ssl
+        )?;
+        for file in &files{
+            process_single_file(&file, &config.db_file, exporter.to_owned(), &term);
+        }
+        std::thread::sleep(std::time::Duration::from_millis(1000))
     }
     Ok(())
 }

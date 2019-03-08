@@ -10,7 +10,10 @@ mod config;
 use config::Config;
 mod time;
 mod file;
+use file::file::get_files_by_pattern;
+
 mod export;
+use export::https::HttpsSender;
 mod processing;
 use processing::process_single_file;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -26,7 +29,7 @@ fn sig_handler() -> Arc<AtomicBool> {
     term
 }
 
-fn main_loop(){
+fn main_loop() -> Result<(), std::io::Error>{
     let term = sig_handler();
     let config_filename = "config.json".to_string();
     let config = match Config::from_file(&config_filename){
@@ -38,17 +41,18 @@ fn main_loop(){
             ::std::process::exit(1);
         }
     };
-    let files = file::get_file_by_pattern(
-        &config.path, &config.file_pattern).unwrap();
-    let exporter = export::https::HttpsSender::new(
+    let files = get_files_by_pattern(
+        &config.path, &config.file_pattern)?;
+    let exporter = HttpsSender::new(
         &config.logstash_connection, config.logstash_ssl
-    ).unwrap();
+    )?;
     for file in &files{
         process_single_file(&file, &config.db_file, exporter.to_owned(), &term);
     }
+    Ok(())
 }
 fn main() -> Result<(), std::io::Error> {
-    main_loop();
+    main_loop()?;
     Ok(())
 }
 

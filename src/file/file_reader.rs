@@ -50,13 +50,13 @@ impl <'a> Lines <'a>{
     pub fn new(file_name: &str) -> Lines{
         Lines {file_name}
     }
-    pub fn iter(&self, offset: u64) -> RecordIter{
-        let f = File::open(self.file_name).expect("File not found");
+    pub fn iter(&self, offset: u64) -> Result<RecordIter, std::io::Error>{
+        let f = File::open(self.file_name)?;
         let mut reader = BufReader::new(f);
-        let _offset = reader.seek(SeekFrom::Start(offset)).unwrap();
-        RecordIter {
+        let _offset = reader.seek(SeekFrom::Start(offset))?;
+        Ok(RecordIter {
             reader,
-        }
+        })
     }
 }
 

@@ -12,9 +12,14 @@ pub fn lines_producer(offset: &std::cell::Cell<u64>, file_name: &str, line_sende
 
     move || {
         let lines = Lines::new(&file_name);
-        for line in lines.iter(offset){
-             if let Err(_) = line_sender
-                 .send((line.data, line.offset)) {break;};
+        if let Ok(iter) = lines.iter(offset) {
+            for line in iter{
+                 if let Err(_) = line_sender
+                     .send((line.data, line.offset)) {break;};
+            }
+        }
+        else {
+            eprintln!("Cant read file:{}. Skipping", &file_name);
         }
     }}).unwrap();
     return sender_handler

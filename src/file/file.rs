@@ -9,11 +9,11 @@ pub struct File{
     pub modified: u64,
 }
 
-pub fn get_file_by_pattern (
+pub fn get_files_by_pattern (
         path: &str, pattern: &str) -> Result<Vec<File>, std::io::Error>{
     let mut files:Vec<File> = Vec::new();
-    let dir = read_dir(&path)?;
-    let re = Regex::new(&pattern).unwrap();
+    let dir = read_dir(&path).expect(&format!("Cant read directory: {}\n", &path));
+    let re = Regex::new(&pattern).expect("File pattern is not a valid re");
 
     for entry in dir {
         let entry = entry?;

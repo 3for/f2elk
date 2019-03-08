@@ -41,14 +41,18 @@ fn main_loop() -> Result<(), std::io::Error>{
             ::std::process::exit(1);
         }
     };
-    loop{
+    loop {
+        if term.load(Ordering::SeqCst) {break;}
+
         let files = get_files_by_pattern(
             &config.path, &config.file_pattern)?;
         let exporter = HttpsSender::new(
             &config.logstash_connection, &config.logstash_ssl
         )?;
         for file in &files{
+            println!("{} started processing", &file.file_name);
             process_single_file(&file, &config.db_file, exporter.to_owned(), &term);
+            println!("{} finished ", &file.file_name);
         }
         std::thread::sleep(std::time::Duration::from_millis(1000))
     }

@@ -36,6 +36,10 @@ where T: Exporter + Send + 'static
     }
 
     receiver_handler.join().unwrap();
-    sender_handler.join().unwrap();
+    if let Ok(finished) = sender_handler.join() {
+        if finished == true {
+            modified.set(file.modified)
+        }
+    };
 }
 

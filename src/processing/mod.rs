@@ -10,7 +10,6 @@ use self::lines_sender::lines_sender;
 use std::sync::atomic::AtomicBool;
 
 
-use std::io::Error;
 use std::sync::Arc;
 
 

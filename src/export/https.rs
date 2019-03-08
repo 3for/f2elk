@@ -3,6 +3,8 @@ use super::*;
 use std::fs::File;
 use std::io::Read;
 use reqwest::Url;
+use config::SslConfig;
+
 
 #[derive(Clone )]
 pub struct HttpsSender{
@@ -10,21 +12,31 @@ pub struct HttpsSender{
     client: reqwest::Client,
 }
 impl HttpsSender {
-    pub fn new(url: &str, client_pem: &str, client_ca: &str)
+    pub fn new(url: &str, ssl: Option<SslConfig>)
             -> Result<HttpsSender, io::Error> {
-        let mut buf = Vec::new();
-        File::open(client_pem)?
-            .read_to_end(&mut buf)?;
-        let identity = reqwest::Identity::from_pem(&buf).unwrap();
-        let mut buf = Vec::new();
-        File::open(client_ca)?
-            .read_to_end(&mut buf)?;
-        let ca = reqwest::Certificate::from_pem(&buf).unwrap();
-        let client = reqwest::Client::builder()
-            .use_rustls_tls()
-            .add_root_certificate(ca)
-            .identity(identity)
-            .build().unwrap();
+        let client = match ssl {
+            Some(ssl) => {
+                let mut buf = Vec::new();
+                File::open(ssl.client_pem_file)?
+                    .read_to_end(&mut buf)?;
+                let identity = reqwest::Identity::from_pem(&buf).unwrap();
+                let mut buf = Vec::new();
+                File::open(ssl.client_ca_chain_file)?
+                    .read_to_end(&mut buf)?;
+                let ca = reqwest::Certificate::from_pem(&buf).unwrap();
+                let client = reqwest::Client::builder()
+                    .use_rustls_tls()
+                    .add_root_certificate(ca)
+                    .identity(identity)
+                    .build().unwrap();
+                client
+            },
+            None => {
+                let client = reqwest::Client::builder()
+                    .build().unwrap();
+                client
+            }
+        };
 
         let url = Url::parse(url).unwrap();
 
